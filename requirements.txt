@@ -3,8 +3,9 @@ numpy
 pandas
 matplotlib
 seaborn
-keras
-tensorflow
+keras==2.6.0
+tensorflow==2.6.4
 tqdm
 scikit-learn
 pillow
+protobuf==3.20.*
