@@ -5,36 +5,41 @@
 Open cmd
 
 ```bash
-
 git clone https://github.com/HungDongne/Eye-for-blind.git
 
 cd Eye-for-blind
-
 ```
+
 ## Create virtual environment and install dependencies
 
-Create virtual environment *Make sure using Python 3.9.x*
+- Create virtual environment *(Make sure using Python 3.9.x)*
 
 ```bash
-
 python -m venv .venv
 
 .venv\Scripts\activate
-
 ```
-Install dependencies python
+
+- Install dependencies python:
 
 ```bash
-
 pip install -r requirements.txt
-
 ```
-## How to running
+
+- Download trained Yolor model:
+
 ```bash
-
-python superman.py --video2frames True --videoName Final1.mp4 --use_cuda 0
-
+https://drive.google.com/file/d/12vFn-AfXKjto2Etit-1bAUow5ZTvYmJP/view?usp=sharing
 ```
+
+- Move **yolor_p6.pt** to *yolormodel* folder
+
+## How to running
+
+```bash
+python superman.py --video2frames True --videoName Final1.mp4 --use_cuda 0
+```
+
 **--videoName:** the name of video that want to warming walking
 
 **--video2frames:** *True* if export video to frames in *video/(videoName)*
