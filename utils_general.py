@@ -93,74 +93,80 @@ def traffic_light_tracking(max_num, prev_obj_list, cur_obj_list, threshold): # t
     return max_num, object_list
 
 def object_tracking(max_num, prev_obj_list, cur_obj_list):
+    # Check for empty lists to prevent ValueError
+    if len(prev_obj_list) == 0 or len(cur_obj_list) == 0:
+        # If prev_obj_list is empty but cur_obj_list has objects, create new objects
+        if len(cur_obj_list) > 0:
+            object_list = []
+            for idx, bb in enumerate(cur_obj_list):
+                added_obj = {max_num: bb}
+                max_num += 1
+                object_list.append(added_obj)
+            return max_num, object_list
+        # If both are empty or only cur_obj_list is empty
+        return max_num, []
+    
+    # Continue with original function if both lists have elements
     matrix = np.zeros((len(prev_obj_list), len(cur_obj_list)))
     for i in range(len(prev_obj_list)):
         for j in range(len(cur_obj_list)):
-            #print(list(prev_obj_list[i].values())[0])
             matrix[i][j] = get_distance(list(prev_obj_list[i].values())[0], cur_obj_list[j])
 
-    arg_min = np.argmin(matrix, axis = 1)
+    arg_min = np.argmin(matrix, axis=1)
 
     if len(prev_obj_list) == len(cur_obj_list):
         object_list = []
         cur_visited = np.zeros((len(cur_obj_list)))
-        #print("arg_min : ", arg_min)
         for idx, obj in enumerate(prev_obj_list):
-            #new_obj = obj.copy()
             new_obj = {}
             id, _ = list(obj.items())[0]
-            # print("id : ", id)
             if cur_visited[arg_min[idx]] == 0:
                 cur_visited[arg_min[idx]] = 1
                 new_obj[id] = cur_obj_list[arg_min[idx]]
             else:
-                min = 100000000
+                min_val = 100000000
                 ii = -1
                 for jw in range(len(cur_visited)):    
-                    if cur_visited[jw] == 0 and min > matrix[idx][jw]:
+                    if cur_visited[jw] == 0 and min_val > matrix[idx][jw]:
                         ii = jw
-                        min = matrix[idx][jw]
-                cur_visited[ii] = 1
-                #print("ii : ", ii)
-                new_obj[id] = cur_obj_list[ii]
-
+                        min_val = matrix[idx][jw]
+                # Check if we found a valid index
+                if ii != -1:
+                    cur_visited[ii] = 1
+                    new_obj[id] = cur_obj_list[ii]
+                else:
+                    # Keep the previous bounding box if no new match is found
+                    new_obj[id] = list(prev_obj_list[idx].values())[0]
             object_list.append(new_obj)
         
     # case 2 : prev obj number > cur obj number
     elif len(prev_obj_list) > len(cur_obj_list):
-        
         object_list = []
         id = -1 * np.ones(len(cur_obj_list))
         value = -1 * np.ones(len(cur_obj_list))
 
         for idx, min_idx in enumerate(arg_min):
             if id[min_idx] == -1 and value[min_idx] == -1:
-                # cur_obj = prev_obj_list[idx].copy() # dict = {id, [xywh]}
                 cur_id = list(prev_obj_list[idx].keys())[0] # id
                 bb = cur_obj_list[min_idx] # [x, y, w, h]
                 
-                # cur_obj['cur_box'] = bb
                 cur_obj = {}
                 cur_obj[cur_id] = bb
                 id[min_idx] = cur_id
                 value[min_idx] = matrix[idx][min_idx]
 
                 object_list.append(cur_obj)
-                #print("init : ", object_list)
             else:
                 # add another object with larger id number 
                 if matrix[idx][min_idx] < value[min_idx]:
                     origin_id = id[min_idx]
                     for obj in object_list:
-                        #if obj['id'] == origin_id:
                         if list(obj.keys())[0] == origin_id:
                             object_list.remove(obj)
-                    #print("after remove : ", object_list)
+                            break
 
-                    #new_obj = prev_obj_list[idx].copy()
                     new_obj = {}
                     new_id = list(prev_obj_list[idx].keys())[0]
-                    #new_obj['cur_box'] = cur_obj_list[min_idx]
                     new_obj[new_id] = cur_obj_list[min_idx]
 
                     object_list.append(new_obj)
@@ -175,7 +181,6 @@ def object_tracking(max_num, prev_obj_list, cur_obj_list):
 
         # origin 
         for idx, obj in enumerate(prev_obj_list):
-            #new_obj = obj.copy()
             new_obj = {}
             new_id = list(obj.keys())[0]
             new_obj[new_id] = cur_obj_list[arg_min[idx]]
@@ -187,7 +192,6 @@ def object_tracking(max_num, prev_obj_list, cur_obj_list):
         for idx in range(len(cur_visited)):
             if cur_visited[idx] == 0:
                 added_obj = {max_num:cur_obj_list[idx]}
-                #added_obj = {'id' : max_num, 'cur_box' : cur_obj_list[idx]}
                 max_num += 1
                 object_list.append(added_obj)
 
@@ -197,7 +201,9 @@ def inference_(frame, output_dict, net):
     
     inf = {}
 
+    # Collect position data from previous frames
     for i in range(frame - net.args.input, frame):
+        if str(i) in output_dict:  # Check if the frame exists in output_dict
             for obj in output_dict[str(i)]:
                 id = list(obj.keys())[0]
                 xywh = list(obj.values())[0]
@@ -205,48 +211,46 @@ def inference_(frame, output_dict, net):
                 if id in inf.keys():
                     inf[id] = np.vstack((inf[id], np.array(xywh)))
                 else:
-                    inf[id] = np.array(xywh)
+                    inf[id] = np.array([xywh])  # Ensure it's a 2D array from the start
 
-    # exception num of value is less than 16
-    for id, pos in inf.items():
-        if pos.shape[0] != 16:
-            #print("*"*50)
-            last = pos.shape[0] # 10
-            for i in range(last, net.args.input):
-                pos = np.vstack((pos, pos[-1]))
-            inf[id] = pos
-
-    #print("inf : ", inf)
+    # Exception handling for insufficient data
     ret = {}
     for id, pos in inf.items():
+        if pos.shape[0] != net.args.input:
+            last = pos.shape[0]
+            # Ensure pos[-1] is reshaped to match the expected dimensions
+            last_pos = pos[-1].reshape(1, -1)  # Reshape to 2D array with same width
+            
+            for i in range(last, net.args.input):
+                pos = np.vstack((pos, last_pos))  # Stack properly shaped arrays
+            inf[id] = pos
+
+        # Calculate speed
+        spd = pos[1:] - pos[:-1]  # Fixed from '=' to '-'
         
-        spd = pos[1:] = pos[:-1]
+        # Convert to tensor
         pos_input = torch.tensor(pos).unsqueeze(0)
         pos_input = pos_input.type(torch.float32)
-        # Changed from CUDA to CPU
         pos_input = pos_input.to(device='cpu')
 
         spd_input = torch.tensor(spd).unsqueeze(0)
         spd_input = spd_input.type(torch.float32)
-        # Changed from CUDA to CPU
         spd_input = spd_input.to(device='cpu')
 
+        # Inference
         with torch.no_grad():
-            #print("inference")
-            #_, _, intentions = net(speed=spd_input, pos=pos_input, average=True)
             _, _, intentions = net(speed=spd_input, pos=pos_input)
-            #print("person intentions : ", intentions)
             intentions = intentions.detach().cpu().numpy()
+            
         threshold = 0.52
         
         if intentions[0][1] > threshold:
-            #print("up")
-            intention = 1
+            intention = 1  # up
         else:
-            #print("down")
-            intention = 0
-        #print(id, ": ", intention)
+            intention = 0  # down
+            
         ret[id] = intention
+        
     return ret
 
 def detect_object_number(mask):

@@ -46,7 +46,6 @@ class args():
 argv = args()
 
 def run(args):
-
     if args.video2frames:
         videoRootdir = 'videos'
         resize = args.resize
@@ -65,7 +64,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--use_cuda', type=int, default=0, help='Whether use GPU')  # Changed default to 0
-    parser.add_argument('--videoName', type=str, default='Final1.mp4')
+    parser.add_argument('--videoName', type=str, default='demo2.mp4')
     parser.add_argument('--resize', type=bool, default=False)
     parser.add_argument('--size', type=int, default=1280)
     parser.add_argument('--video2frames', type=bool, default=True)

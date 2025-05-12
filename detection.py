@@ -98,6 +98,9 @@ def object_detect(args, net):
     # MODIFIED: Run model initialization based on device
     _ = model(img.half() if half else img)  # run once
    
+    tt_list = []
+    bb_list = []
+    
     for t_idx, data in enumerate(dataset):
         print("-"*100)
         print("frame number (t_idx) : ", t_idx)
@@ -279,7 +282,6 @@ def object_detect(args, net):
             if color_level['white'] > 5:
                 label = '%s' % ('car traffic light' )
                 traffic_cls = 3
-            
             else:
                 if color_level['green'] > color_level['red'] and color_level['green']  > color_level['white'] :
                     label = '%s %.4f' % ('car traffic light', color_level['green'] )
