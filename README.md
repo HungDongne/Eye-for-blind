@@ -22,9 +22,11 @@
     - Converting visual information to audio
     - Providing timely and clear warnings
 
+![EyeForBlind dashboard](./images/thumbnail1.png)
+
 ## 🎥 Demo
 
-<video src="./result/demo/video/demo.mp4"></video>
+[![Watch the demo video](images/thumbnail2.png)](https://youtu.be/UEKxn6MKuok)
 
 ## 🚀 Quick Start
 
@@ -95,13 +97,6 @@ python superman.py --videoName demo2.mp4 --use_cuda 0
 | `--classes` | int[] | None | Filter detection by specific class IDs |
 | `--agnostic-nms` | flag | False | Enable class-agnostic Non-Maximum Suppression |
 | `--augment` | flag | False | Enable augmented inference |
-
-## 🌟 Features
-
-- Real-time object detection
-- Video frame extraction
-- Supports both CPU and GPU processing
-- Designed for assistive navigation
 
 ## 📞 Contact
 
